@@ -20,14 +20,15 @@ let selection: THREE.Mesh[][] = [];
 
 //@ts-ignore
 const renderer = new THREE.WebGLRenderer({canvas: artifactCanvas});
-renderer.setSize( window.innerWidth, window.innerHeight);
+renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild( renderer.domElement );
 
 const light = new PointLight(0xffffff, 400);
-const lights = new PointLight(0xffff44, 5);
-let pointer = new THREE.SphereGeometry(0.4);
-let pointerts = new THREE.Mesh(pointer, new THREE.MeshStandardMaterial({color:0xffff00}))
-lights.add(pointerts);
+const lights = new PointLight(0xffff00, 5);
+let pointertsar = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.0, 0.8), new THREE.MeshStandardMaterial({color:0xff0000}))
+pointertsar.position.y = 0.5;
+let bro = false;
+lights.add(pointertsar);
 light.position.y = 10;
 lights.position.y = 1.5;
 lights.decay = 1;
@@ -37,9 +38,10 @@ const controls = new OrbitControls(camera, renderer.domElement)
 controls.maxDistance = 20;
 controls.minDistance = 13;
 controls.enableDamping = true;
-controls.dampingFactor = 0.1;
+controls.dampingFactor = 0.05;
 controls.rotateSpeed = 0.3;
 controls.enableZoom = false;
+controls.panSpeed = 0.5;
 
 function buildEntity(building: Building) {
 	const geometry = new THREE.BoxGeometry(building.size.x * 0.95, building.size.y * 0.95, building.size.z * 0.95);
@@ -94,7 +96,8 @@ let halfY = Math.floor(grid[0][halfX].length / 2)
 
 controls.target.x = grid[0][halfX][halfY].position.x;
 controls.target.z = grid[0][halfX][halfY].position.z;
-
+controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
+controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
 const keys = {
 	forward: false,
 	backwards: false,
@@ -151,6 +154,21 @@ setInterval(() => {
 	light.position.x = camera.position.x;
 	lights.position.z = controls.target.z;
 	lights.position.x = controls.target.x;
+	
+	let p = pointertsar.position.y;
+
+	if (p >= 0.5) {
+		bro = true;
+	}
+	if (p <= 0) {
+		bro = false;
+	}
+
+	if (bro) {
+		pointertsar.position.y -= 0.01;		
+	} else {
+		pointertsar.position.y += 0.01;
+	}
 }, 1)
 
 scene.fog = new THREE.Fog( 0x444444, 0, 50 );

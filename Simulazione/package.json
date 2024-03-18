@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "three": "^0.162.0",
+    "threex-domevents": "^1.0.0"
+  },
+  "devDependencies": {
+    "vite": "^5.1.6"
+  }
+}

@@ -12,8 +12,8 @@ const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.inner
 //! PENDING CHANGES
 //? Defines the size of the grid, will later be take the information dynamically from the json
 let gridSize = {
-	x: 40,
-	y: 40
+	x: 10,
+	y: 10
 }
 let grid: THREE.Mesh[][][] = [];
 let selection: THREE.Mesh[][] = [];
@@ -25,14 +25,22 @@ document.body.appendChild( renderer.domElement );
 
 const light = new PointLight(0xffffff, 400);
 const lights = new PointLight(0xffff00, 5);
+const lightss = new PointLight(0xffff00, 2);
 let pointertsar = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.0, 0.8), new THREE.MeshStandardMaterial({color:0xff0000}))
 pointertsar.position.y = 0.5;
 let bro = false;
-lights.add(pointertsar);
+lightss.position.y = 2;
+lights.add(pointertsar, lightss);
 light.position.y = 10;
 lights.position.y = 1.5;
 lights.decay = 1;
-scene.add(new THREE.AmbientLight(), light, lights);
+const texture = new THREE.TextureLoader().load( "https://images.pexels.com/photos/1205301/pexels-photo-1205301.jpeg" );
+texture.wrapS = THREE.RepeatWrapping;
+texture.wrapT = THREE.RepeatWrapping;
+texture.repeat.set( 1, 1 );
+let gruond = new THREE.Mesh(new THREE.BoxGeometry(100, 0.01, 100), new THREE.MeshStandardMaterial({map:texture}))
+gruond.position.y = 0.99;
+scene.add(new THREE.AmbientLight(), light, lights, gruond);
 
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.maxDistance = 20;
@@ -41,7 +49,6 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.rotateSpeed = 0.3;
 controls.enableZoom = false;
-controls.panSpeed = 0.5;
 
 function buildEntity(building: Building) {
 	const geometry = new THREE.BoxGeometry(building.size.x * 0.95, building.size.y * 0.95, building.size.z * 0.95);
@@ -148,7 +155,7 @@ function debugging() {
 
 setInterval(() => {
 	if (deb) console.log(debugging());
-	camera.position.y = 10;	
+	camera.position.y = 10;
 	controls.target.y = 0;
 	light.position.z = camera.position.z;
 	light.position.x = camera.position.x;

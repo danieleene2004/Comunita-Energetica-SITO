@@ -1,12 +1,12 @@
-export enum BuildingType {
-	SolarPanel = 0,
-	House = 1,
-    GridTile = 2,
-}
 export interface Vector3D {
 	x: number;
 	y: number;
 	z: number;
+}
+export enum BuildingType {
+	SolarPanel = 0,
+	House = 1,
+    GridTile = 2,
 }
 export interface Building {
 	type: BuildingType;

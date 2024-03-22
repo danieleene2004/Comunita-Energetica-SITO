@@ -1,66 +1,45 @@
 import * as THREE from 'three';
-import { Building, BuildingType } from './models';
+import { Building, BuildingType } from './models/map';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { PointLight } from 'three';
+import { graphics, GraphicsPresets, GraphicsSettings, Quality } from './models/graphics';
 
-import * as THREEx from "threex-domevents"
+//@ts-ignore
+import bg from "../static/images/ground.jpg";
 
-import bg from "../static/images/ground.jpg"
-let skyColor = 0x00CED1
-enum Quality {
-	HighPerformance = "high-performance",
-	Default = "default",
-	LowPower = "low-power",
-}
-interface GraphicsSettings {
-	ground: boolean,
-	lights: boolean,
-	fog: boolean,
-	antialiasing: boolean,
-	quality: Quality
-}
+//TODO: REOGRANIZE EVERYTHING
+//TODO: UPDATE GRAPHICS FUNCTION
+//TODO: PLACE BUILDING FUNCTION
+//TODO: ADD A SPHERE AROUND THE CAMERA WITH CLOUDS TEXTURE AND A LIGHT AT THE TOP AND BOTTOM, MAKE THE SPHERE TURN TO SIMULATE SUNLIGHT AND MOONLIGHT, COLOR THE LIGHTS ACCORDINGLY
 
-//* SETUP
-let graphicsSettings: GraphicsSettings = {
+//? Used throughout the project to decide graphical features
+let graphicsSettings: GraphicsSettings;
+
+//? Can be set to use different presets (High, Medium, Low)
+graphicsSettings = graphics(GraphicsPresets.High);
+
+//? Or use custom settings
+graphicsSettings = {
 	ground: true,
-	lights: true,
-	fog: true,
-	antialiasing: true,
-	quality: Quality.HighPerformance
-}
-let High: GraphicsSettings = {
-	ground: true,
-	lights: true,
-	fog: true,
-	antialiasing: true,
-	quality: Quality.HighPerformance
-}
-let Medium: GraphicsSettings = {
-	ground: true,
-	lights: true,
-	fog: false,
-	antialiasing: false,
-	quality: Quality.Default
-}
-let Low: GraphicsSettings = {
-	ground: false,
 	lights: false,
 	fog: false,
 	antialiasing: false,
 	quality: Quality.LowPower
 }
+
 const scene = new THREE.Scene();
+let skyColor = 0x00CED1
+scene.background = new THREE.Color(skyColor);
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
 //! PENDING CHANGES
-
-//? Defines the size of the grid, will later be take the information dynamically from the json
+//? Defines the size of the grid, will later be take the information dynamically from a json
 let gridSize = {
 	x: 10,
 	y: 10
 }
-let grid: THREE.Mesh[][][] = [];
-let selection: THREE.Mesh[][] = [];
+let grid: THREE.Mesh[][][] = []; // Contains every entity in the scene for esier access, [0] holds the grid tiles
+let selection: THREE.Mesh[][] = []; // Currently selected grid or eventual building
 
 //@ts-ignore
 const renderer = new THREE.WebGLRenderer({canvas: artifactCanvas, antialias: graphicsSettings.antialiasing });
@@ -84,15 +63,14 @@ texture.wrapS = THREE.RepeatWrapping;
 texture.wrapT = THREE.RepeatWrapping;
 texture.repeat.set( 25 + gridSize.x, 25 + gridSize.x );
 let gruond = new THREE.Mesh(new THREE.CircleGeometry(200 + Math.max(gridSize.x, gridSize.y), 32), new THREE.MeshStandardMaterial({map:texture}))
-gruond.rotation.x = -1.6;
+gruond.rotation.x = -1.566666;
 gruond.position.y = 0;
 
-scene.background = new THREE.Color(skyColor)
 scene.add(new THREE.AmbientLight(), lights)
 
 if (graphicsSettings.lights) scene.add(light); else light.intensity = 0;
 if (graphicsSettings.ground) scene.add(gruond);
-if (graphicsSettings.fog) scene.fog = new THREE.Fog( skyColor, 0, 80 );
+if (graphicsSettings.fog) scene.fog = new THREE.Fog( skyColor, 0, 100 );
 
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.maxDistance = 20;
@@ -136,7 +114,7 @@ function cursorPosition() {
 	try {
 		hovered = grid[0][Math.floor(lights.position.x)][Math.floor(lights.position.z)].position;
 	} catch (e) {
-
+		// ignore
 	}
 
 	grid[0].forEach(element => {
@@ -165,17 +143,6 @@ const keys = {
 	left: false,
 	right: false,
 }
-let collected: THREE.Mesh[][] = [];
-grid.forEach(e => e.forEach(a => collected.push(a)));
-
-/*var domEvents = new THREEx.domEvents(camera, renderer.domElement)
-collected.forEach(mesh => {
-	domEvents.addEventListener(mesh, 'click', function(event){
-		console.log('you clicked on mesh', mesh)
-	}, false);
-})*/
-
-
 
 let deb = false;
 function debugging() {

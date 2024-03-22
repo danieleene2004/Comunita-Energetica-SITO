@@ -5,11 +5,55 @@ import { PointLight } from 'three';
 
 import * as THREEx from "threex-domevents"
 
+import bg from "../static/images/ground.jpg"
+let skyColor = 0x00CED1
+enum Quality {
+	HighPerformance = "high-performance",
+	Default = "default",
+	LowPower = "low-power",
+}
+interface GraphicsSettings {
+	ground: boolean,
+	lights: boolean,
+	fog: boolean,
+	antialiasing: boolean,
+	quality: Quality
+}
+
 //* SETUP
+let graphicsSettings: GraphicsSettings = {
+	ground: true,
+	lights: true,
+	fog: true,
+	antialiasing: true,
+	quality: Quality.HighPerformance
+}
+let High: GraphicsSettings = {
+	ground: true,
+	lights: true,
+	fog: true,
+	antialiasing: true,
+	quality: Quality.HighPerformance
+}
+let Medium: GraphicsSettings = {
+	ground: true,
+	lights: true,
+	fog: false,
+	antialiasing: false,
+	quality: Quality.Default
+}
+let Low: GraphicsSettings = {
+	ground: false,
+	lights: false,
+	fog: false,
+	antialiasing: false,
+	quality: Quality.LowPower
+}
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
 //! PENDING CHANGES
+
 //? Defines the size of the grid, will later be take the information dynamically from the json
 let gridSize = {
 	x: 10,
@@ -19,8 +63,9 @@ let grid: THREE.Mesh[][][] = [];
 let selection: THREE.Mesh[][] = [];
 
 //@ts-ignore
-const renderer = new THREE.WebGLRenderer({canvas: artifactCanvas});
+const renderer = new THREE.WebGLRenderer({canvas: artifactCanvas, antialias: graphicsSettings.antialiasing });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.powerPreference = graphicsSettings.quality;
 document.body.appendChild( renderer.domElement );
 
 const light = new PointLight(0xffffff, 400);
@@ -34,13 +79,20 @@ lights.add(pointertsar, lightss);
 light.position.y = 10;
 lights.position.y = 1.5;
 lights.decay = 1;
-const texture = new THREE.TextureLoader().load( "https://images.pexels.com/photos/1205301/pexels-photo-1205301.jpeg" );
+const texture = new THREE.TextureLoader().load( bg );
 texture.wrapS = THREE.RepeatWrapping;
 texture.wrapT = THREE.RepeatWrapping;
-texture.repeat.set( 1, 1 );
-let gruond = new THREE.Mesh(new THREE.BoxGeometry(100, 0.01, 100), new THREE.MeshStandardMaterial({map:texture}))
-gruond.position.y = 0.99;
-scene.add(new THREE.AmbientLight(), light, lights, gruond);
+texture.repeat.set( 25 + gridSize.x, 25 + gridSize.x );
+let gruond = new THREE.Mesh(new THREE.CircleGeometry(200 + Math.max(gridSize.x, gridSize.y), 32), new THREE.MeshStandardMaterial({map:texture}))
+gruond.rotation.x = -1.6;
+gruond.position.y = 0;
+
+scene.background = new THREE.Color(skyColor)
+scene.add(new THREE.AmbientLight(), lights)
+
+if (graphicsSettings.lights) scene.add(light); else light.intensity = 0;
+if (graphicsSettings.ground) scene.add(gruond);
+if (graphicsSettings.fog) scene.fog = new THREE.Fog( skyColor, 0, 80 );
 
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.maxDistance = 20;
@@ -101,6 +153,8 @@ function cursorPosition() {
 let halfX = Math.floor(grid[0].length / 2)
 let halfY = Math.floor(grid[0][halfX].length / 2)
 
+gruond.position.x = grid[0][halfX][halfY].position.x;
+gruond.position.z = grid[0][halfX][halfY].position.z;
 controls.target.x = grid[0][halfX][halfY].position.x;
 controls.target.z = grid[0][halfX][halfY].position.z;
 controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
@@ -123,20 +177,6 @@ collected.forEach(mesh => {
 
 
 
-//! ANIMATION LOOP
-function animate() {
-	requestAnimationFrame( animate );
-
-	cursorPosition();
-
-	
-
-	controls.update();
-	renderer.render( scene, camera );
-}
-
-animate();
-
 let deb = false;
 function debugging() {
 	let round = (num: number) => Math.floor(num * 100) / 100;
@@ -152,16 +192,22 @@ function debugging() {
 		"\n\tY: " + round(controls.target.y) +
 		"\n\nDISTANCE FROM TARGET: " + round(controls.getDistance())
 }
-
-setInterval(() => {
+//! ANIMATION LOOP
+function animate() {
+	requestAnimationFrame( animate );
 	if (deb) console.log(debugging());
+
+	cursorPosition();
+
+	controls.update();
 	camera.position.y = 10;
 	controls.target.y = 0;
 	light.position.z = camera.position.z;
 	light.position.x = camera.position.x;
 	lights.position.z = controls.target.z;
 	lights.position.x = controls.target.x;
-	
+
+		
 	let p = pointertsar.position.y;
 
 	if (p >= 0.5) {
@@ -176,10 +222,11 @@ setInterval(() => {
 	} else {
 		pointertsar.position.y += 0.01;
 	}
-}, 1)
+	renderer.render( scene, camera );
+}
 
-scene.fog = new THREE.Fog( 0x444444, 0, 50 );
-scene.background = new THREE.Color(0x444444)
+animate();
+
 
 //! KEYBOARD COMMANDS
 //* [SPACE]: Auto rotate

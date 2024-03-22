@@ -6,8 +6,9 @@ import { graphics, GraphicsPresets, GraphicsSettings, Quality } from './models/g
 
 //@ts-ignore
 import bg from "../static/images/ground.jpg";
+import sk from "../static/images/sky.jpg";
 
-//TODO: REOGRANIZE EVERYTHING
+//TODO: REORGANIZE EVERYTHING
 //TODO: UPDATE GRAPHICS FUNCTION
 //TODO: PLACE BUILDING FUNCTION
 //TODO: ADD A SPHERE AROUND THE CAMERA WITH CLOUDS TEXTURE AND A LIGHT AT THE TOP AND BOTTOM, MAKE THE SPHERE TURN TO SIMULATE SUNLIGHT AND MOONLIGHT, COLOR THE LIGHTS ACCORDINGLY
@@ -21,15 +22,15 @@ graphicsSettings = graphics(GraphicsPresets.High);
 //? Or use custom settings
 graphicsSettings = {
 	ground: true,
-	lights: false,
+	lights: true,
 	fog: false,
-	antialiasing: false,
-	quality: Quality.LowPower
+	antialiasing: true,
+	quality: Quality.HighPerformance
 }
 
+
 const scene = new THREE.Scene();
-let skyColor = 0x00CED1
-scene.background = new THREE.Color(skyColor);
+let skyColor = 0x444444
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
 
 //! PENDING CHANGES
@@ -47,6 +48,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.powerPreference = graphicsSettings.quality;
 document.body.appendChild( renderer.domElement );
 
+
 const light = new PointLight(0xffffff, 400);
 const lights = new PointLight(0xffff00, 5);
 const lightss = new PointLight(0xffff00, 2);
@@ -62,15 +64,22 @@ const texture = new THREE.TextureLoader().load( bg );
 texture.wrapS = THREE.RepeatWrapping;
 texture.wrapT = THREE.RepeatWrapping;
 texture.repeat.set( 25 + gridSize.x, 25 + gridSize.x );
-let gruond = new THREE.Mesh(new THREE.CircleGeometry(200 + Math.max(gridSize.x, gridSize.y), 32), new THREE.MeshStandardMaterial({map:texture}))
+let gruond = new THREE.Mesh(new THREE.CircleGeometry(50 + Math.max(gridSize.x, gridSize.y), 32), new THREE.MeshStandardMaterial({map:texture}))
 gruond.rotation.x = -1.566666;
 gruond.position.y = 0;
 
-scene.add(new THREE.AmbientLight(), lights)
+const sky = new THREE.TextureLoader().load( sk );
+sky.wrapS = THREE.RepeatWrapping;
+sky.wrapT = THREE.RepeatWrapping;
+let globeGeometry = new THREE.SphereGeometry(200, 100, 100)
+let globe = new THREE.Mesh(globeGeometry, new THREE.MeshStandardMaterial({map:sky, side: THREE.DoubleSide}))
+
+
+scene.add(new THREE.AmbientLight(), lights, globe)
 
 if (graphicsSettings.lights) scene.add(light); else light.intensity = 0;
 if (graphicsSettings.ground) scene.add(gruond);
-if (graphicsSettings.fog) scene.fog = new THREE.Fog( skyColor, 0, 100 );
+if (graphicsSettings.fog) scene.fog = new THREE.Fog( skyColor, 0, 200 );
 
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.maxDistance = 20;
@@ -137,13 +146,9 @@ controls.target.x = grid[0][halfX][halfY].position.x;
 controls.target.z = grid[0][halfX][halfY].position.z;
 controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
 controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
-const keys = {
-	forward: false,
-	backwards: false,
-	left: false,
-	right: false,
-}
 
+globe.position.x = halfX;
+globe.position.z = halfY;
 let deb = false;
 function debugging() {
 	let round = (num: number) => Math.floor(num * 100) / 100;
@@ -165,6 +170,7 @@ function animate() {
 	if (deb) console.log(debugging());
 
 	cursorPosition();
+
 
 	controls.update();
 	camera.position.y = 10;
